@@ -190,7 +190,10 @@ app.post('/admin/login', asyncHandler(async (req, res) => {
     const { password } = req.body;
     const adminPass = process.env.ADMIN_PASSWORD || 'admin';
     if (!password) return res.status(400).json({ error: 'Password required' });
-    if (password !== adminPass) return res.status(401).json({ error: 'Invalid password' });
+    if (password !== adminPass) {
+        console.warn('[ADMIN LOGIN] invalid password attempt, provided length:', password ? password.length : 0);
+        return res.status(401).json({ error: 'Invalid password' });
+    }
 
     const token = jwt.sign({ username: 'admin', role: 'admin' }, JWT_SECRET, { expiresIn: '2h' });
     req.session.user = { id: 'admin', username: 'admin', role: 'admin', token };
