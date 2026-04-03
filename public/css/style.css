@@ -433,6 +433,18 @@ footer {
     gap: 10px;
 }
 
+/* Book preview modal */
+.book-modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); z-index: 20000; }
+.book-modal.show { display: flex; }
+.book-modal-content { background: linear-gradient(180deg, rgba(12,10,9,0.98), rgba(6,6,6,0.98)); border-radius: 12px; width: min(900px, 95%); padding: 20px; border: 1px solid var(--glass-border); box-shadow: 0 30px 80px rgba(0,0,0,0.8); }
+.book-modal .modal-body { display:flex; gap:20px; align-items:flex-start; }
+.book-modal .modal-cover img { width: 260px; height: 360px; object-fit: cover; border-radius:8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+.book-modal .modal-info { color: var(--text-parchment); }
+.book-modal .modal-title { font-family: var(--font-serif); color: var(--gold-main); font-size: 1.8rem; margin-bottom: 10px; }
+.book-modal .modal-desc { color: var(--text-muted); max-height: 220px; overflow-y: auto; }
+.modal-close { position:absolute; top:10px; right:10px; background:transparent; color:var(--text-parchment); border: none; font-size: 2rem; cursor:pointer; }
+.modal-actions { margin-top: 20px; display:flex; gap:12px; }
+
 .toast {
     background: var(--glass-bg);
     border: 1px solid var(--gold-main);
