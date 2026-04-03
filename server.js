@@ -61,7 +61,12 @@ uploadDirs.forEach(dir => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+} else {
+    console.warn('Supabase not configured (SUPABASE_URL/KEY missing). API DB routes will fail until configured.');
+}
 const JWT_SECRET = process.env.JWT_SECRET || 'jwt-secret-999';
 
 // MIDDLEWARE
