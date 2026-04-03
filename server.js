@@ -10,8 +10,50 @@ const fs = require('fs');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
+const validator = require('validator');
 
 const app = express();
+
+// helper to wrap async route handlers and forward errors
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+// --- Validation middlewares ---
+function validateRegister(req, res, next) {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'بيانات ناقصة' });
+    if (!validator.isLength(username, { min: 3, max: 30 })) return res.status(400).json({ error: 'اسم المستخدم يجب أن يكون بين 3 و30 حرفاً' });
+    if (!validator.isLength(password, { min: 8 })) return res.status(400).json({ error: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' });
+    next();
+}
+
+function validateLogin(req, res, next) {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'بيانات ناقصة لتسجيل الدخول' });
+    next();
+}
+
+function validateProfileUpdate(req, res, next) {
+    const { username, bio } = req.body;
+    if (username && !validator.isLength(username, { min: 3, max: 30 })) return res.status(400).json({ error: 'اسم المستخدم غير صالح' });
+    if (bio && !validator.isLength(bio, { max: 500 })) return res.status(400).json({ error: 'السيرة الذاتية طويلة جداً' });
+    next();
+}
+
+function validateLibraryAdd(req, res, next) {
+    const { bookId, type } = req.body;
+    if (!bookId) return res.status(400).json({ error: 'معرّف الكتاب مطلوب' });
+    if (type && !['download', 'purchase'].includes(type)) return res.status(400).json({ error: 'نوع الاستحواذ غير صالح' });
+    next();
+}
+
+function validateBookFields(req, res, next) {
+    const { title, price, category } = req.body;
+    if (!title || !validator.isLength(title, { min: 2 })) return res.status(400).json({ error: 'العنوان مطلوب وطويل بما يكفي' });
+    if (price && !validator.isInt(price.toString(), { min: 0 })) return res.status(400).json({ error: 'السعر غير صالح' });
+    if (category && !validator.isLength(category, { min: 2 })) return res.status(400).json({ error: 'التصنيف غير صالح' });
+    next();
+}
 
 // REAL-WORLD PHYSICAL DIRECTORY SYNC
 const uploadDirs = ['uploads/books', 'uploads/covers'];
@@ -20,10 +62,11 @@ uploadDirs.forEach(dir => {
 });
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const JWT_SECRET = process.env.JWT_SECRET || 'jwt-secret-999';
 
 // MIDDLEWARE
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ALLOWED ? process.env.CORS_ALLOWED.split(',') : '*' }));
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -44,6 +87,13 @@ app.use((req, res, next) => {
     next();
 });
 
+// RATE LIMITERS
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'محاولات كثيرة، حاول لاحقاً' } });
+const uploadLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'محاولات رفع كثيرة، حاول لاحقاً' } });
+
+app.use('/api/auth', authLimiter);
+app.use('/api/books', uploadLimiter);
+
 // STORAGE STORAGE CONFIG
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -54,7 +104,19 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
-const upload = multer({ storage });
+const fileFilter = (req, file, cb) => {
+    if (file.fieldname === 'pdfFile') {
+        if (file.mimetype === 'application/pdf') return cb(null, true);
+        return cb(new Error('Only PDF files are allowed for manuscripts'));
+    }
+    if (file.fieldname === 'coverImage') {
+        if (file.mimetype && file.mimetype.startsWith('image/')) return cb(null, true);
+        return cb(new Error('Only image files are allowed for cover images'));
+    }
+    cb(new Error('Unexpected file field'));
+};
+
+const upload = multer({ storage, fileFilter, limits: { fileSize: 50 * 1024 * 1024 } });
 
 // 🔐 JWT AUTH MIDDLEWARE
 function authenticateToken(req, res, next) {
@@ -79,7 +141,7 @@ function authenticateToken(req, res, next) {
 }
 
 // 👤 AUTH ROUTES
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', validateRegister, asyncHandler(async (req, res) => {
     const { username, password, role } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'بيانات ناقصة' });
 
@@ -90,9 +152,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     if (error) return res.status(500).json({ error: 'عذراً، هذا الاسم مستخدم بالفعل' });
     res.json({ success: true, user: profile[0] });
-});
+}));
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', validateLogin, asyncHandler(async (req, res) => {
     const { username, password } = req.body;
     const { data: user, error } = await supabase.from('profiles').select('*').eq('username', username).single();
 
@@ -102,11 +164,11 @@ app.post('/api/auth/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) return res.status(401).json({ error: 'خطأ في كلمة المرور' });
 
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET || 'jwt-secret-999', { expiresIn: '24h' });
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
     req.session.user = { id: user.id, username: user.username, role: user.role, token };
     
     res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role } });
-});
+}));
 
 app.get('/api/auth/logout', (req, res) => {
     req.session.destroy();
@@ -137,7 +199,7 @@ app.get('/api/profiles/:userId', async (req, res) => {
     });
 });
 
-app.put('/api/profiles', authenticateToken, async (req, res) => {
+app.put('/api/profiles', authenticateToken, validateProfileUpdate, asyncHandler(async (req, res) => {
     const { username, bio, profileImage } = req.body;
     const { data, error } = await supabase.from('profiles')
         .update({ username, bio, profile_image: profileImage })
@@ -146,7 +208,7 @@ app.put('/api/profiles', authenticateToken, async (req, res) => {
 
     if (error) return res.status(500).json({ error: 'فشل التحديث' });
     res.json({ success: true, profile: data[0] });
-});
+}));
 
 // 📚 BOOKS
 app.get('/api/books', async (req, res) => {
@@ -184,7 +246,7 @@ app.post('/api/books', authenticateToken, (req, res, next) => {
         }
         next();
     });
-}, async (req, res) => {
+}, validateBookFields, asyncHandler(async (req, res) => {
     if (req.user.role !== 'author' && req.user.role !== 'admin') return res.status(403).json({ error: 'يجب أن تكون مؤلفاً للنشر' });
 
     const { title, desc, price, category, isFree } = req.body;
@@ -200,10 +262,22 @@ app.post('/api/books', authenticateToken, (req, res, next) => {
 
     if (error) return res.status(500).json({ error: 'فشل حفظ المخطوطة في الأرشيف' });
     res.json({ success: true, book: data[0] });
+}));
+
+// CENTRAL ERROR HANDLER
+app.use((err, req, res, next) => {
+    console.error('[ERROR]', err && err.stack ? err.stack : err);
+    if (err instanceof multer.MulterError) return res.status(400).json({ error: err.message });
+    const status = err.status || 500;
+    const message = err.message || 'حدث خطأ داخلي، حاول لاحقاً';
+    res.status(status).json({ error: message });
 });
 
+// Wrap book POST handler to catch async errors via asyncHandler
+// Replace the previous async handler with a wrapped one
+
 // 📖 USER LIBRARY & DOWNLOADS
-app.post('/api/library/add', authenticateToken, async (req, res) => {
+app.post('/api/library/add', authenticateToken, validateLibraryAdd, asyncHandler(async (req, res) => {
     const { bookId, type } = req.body;
     const { error: libError } = await supabase.from('user_library').upsert([{ 
         user_id: req.user.id, book_id: bookId, acquisition_type: type 
@@ -217,7 +291,7 @@ app.post('/api/library/add', authenticateToken, async (req, res) => {
 
     if (libError) return res.status(500).json({ error: 'فشل الإضافة للمكتبة' });
     res.json({ success: true });
-});
+}));
 
 // 👑 ADMIN API
 app.get('/api/admin/stats', authenticateToken, async (req, res) => {

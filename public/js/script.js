@@ -85,9 +85,28 @@ function updateCartUI() {
     }
 }
 
-// SEARCH SYNC
-document.getElementById('searchInput')?.addEventListener('input', (e) => {
+// SEARCH SYNC (debounced)
+function debounce(fn, wait) {
+    let t;
+    return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+    };
+}
+
+const handleSearchInput = debounce((e) => {
     loadBooks('all', e.target.value);
+}, 350);
+
+document.getElementById('searchInput')?.addEventListener('input', handleSearchInput);
+
+// Mobile menu toggle
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+mobileMenuBtn?.addEventListener('click', () => {
+    const lists = document.querySelectorAll('.nav-section .nav-links');
+    lists.forEach(l => l.classList.toggle('show'));
+    const expanded = mobileMenuBtn.getAttribute('aria-expanded') === 'true';
+    mobileMenuBtn.setAttribute('aria-expanded', (!expanded).toString());
 });
 
 // INITIALIZATION
