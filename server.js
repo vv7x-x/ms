@@ -99,16 +99,8 @@ const uploadLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { 
 app.use('/api/auth', authLimiter);
 app.use('/api/books', uploadLimiter);
 
-// STORAGE STORAGE CONFIG
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dest = file.fieldname === 'pdfFile' ? 'uploads/books/' : 'uploads/covers/';
-        cb(null, dest);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
+// STORAGE CONFIG: use memory storage and upload to Supabase Storage (with local fallback)
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
     if (file.fieldname === 'pdfFile') {
         if (file.mimetype === 'application/pdf') return cb(null, true);
@@ -253,12 +245,52 @@ app.post('/api/books', authenticateToken, (req, res, next) => {
     });
 }, validateBookFields, asyncHandler(async (req, res) => {
     if (req.user.role !== 'author' && req.user.role !== 'admin') return res.status(403).json({ error: 'يجب أن تكون مؤلفاً للنشر' });
-
     const { title, desc, price, category, isFree } = req.body;
-    const pdfPath = req.files['pdfFile'] ? `/uploads/books/${req.files['pdfFile'][0].filename}` : null;
-    const coverPath = req.files['coverImage'] ? `/uploads/covers/${req.files['coverImage'][0].filename}` : '/assets/books.png';
 
-    if (!pdfPath) return res.status(400).json({ error: 'يجب رفع المخطوطة بملف PDF' });
+    // ensure pdf file was provided
+    if (!req.files || !req.files['pdfFile'] || !req.files['pdfFile'][0]) return res.status(400).json({ error: 'يجب رفع المخطوطة بملف PDF' });
+
+    // upload files: prefer Supabase Storage, fallback to local disk
+    let pdfPath = null;
+    let coverPath = '/assets/books.png';
+
+    // handle PDF
+    const pdfFile = req.files['pdfFile'] ? req.files['pdfFile'][0] : null;
+    if (pdfFile) {
+        const safeName = Date.now() + '-' + pdfFile.originalname.replace(/\s+/g, '_');
+        if (supabase) {
+            const bucket = 'books';
+            const filePath = safeName;
+            const { data: upData, error: upErr } = await supabase.storage.from(bucket).upload(filePath, pdfFile.buffer, { contentType: pdfFile.mimetype, upsert: false });
+            if (upErr) throw upErr;
+            const { data: urlData, error: urlErr } = await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60);
+            if (urlErr) throw urlErr;
+            pdfPath = urlData.signedUrl;
+        } else {
+            const dest = path.join('uploads', 'books', safeName);
+            fs.writeFileSync(dest, pdfFile.buffer);
+            pdfPath = `/uploads/books/${safeName}`;
+        }
+    }
+
+    // handle cover image if provided
+    const coverFile = req.files['coverImage'] ? req.files['coverImage'][0] : null;
+    if (coverFile) {
+        const safeName = Date.now() + '-' + coverFile.originalname.replace(/\s+/g, '_');
+        if (supabase) {
+            const bucket = 'covers';
+            const filePath = safeName;
+            const { data: upData, error: upErr } = await supabase.storage.from(bucket).upload(filePath, coverFile.buffer, { contentType: coverFile.mimetype, upsert: false });
+            if (upErr) throw upErr;
+            const { data: urlData, error: urlErr } = await supabase.storage.from(bucket).createSignedUrl(filePath, 60 * 60);
+            if (urlErr) throw urlErr;
+            coverPath = urlData.signedUrl;
+        } else {
+            const dest = path.join('uploads', 'covers', safeName);
+            fs.writeFileSync(dest, coverFile.buffer);
+            coverPath = `/uploads/covers/${safeName}`;
+        }
+    }
 
     const { data, error } = await supabase.from('books').insert([{ 
         title, description: desc, price: parseInt(price) || 0, category, is_free: isFree === 'true', 
