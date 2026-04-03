@@ -26,7 +26,7 @@ async function loadBooks(category = 'all', search = '') {
         }
 
         grid.innerHTML = books.map(book => `
-            <div class="book-card" data-aos="fade-up" onclick="window.location.href='book-details?id=${book.id}'">
+            <div class="book-card" data-aos="fade-up" onclick="showBookModal('${book.id}')">
                 <div class="card-img-container">
                     <img src="${fixImagePath(book.cover_image)}" alt="${book.title}" loading="lazy">
                 </div>
@@ -117,3 +117,51 @@ window.onload = () => {
     loadBooks(urlParams.get('cat') || 'all');
     updateCartUI();
 };
+
+// Book modal logic
+async function showBookModal(bookId) {
+    const modal = document.getElementById('bookModal');
+    const titleEl = modal.querySelector('.modal-title');
+    const descEl = modal.querySelector('.modal-desc');
+    const coverEl = modal.querySelector('.modal-cover img');
+    const actionsEl = modal.querySelector('.modal-actions');
+
+    // fetch book details
+    try {
+        const res = await fetch(`/api/books/${bookId}`);
+        const book = await res.json();
+        titleEl.innerText = book.title || 'بدون عنوان';
+        descEl.innerText = book.description || '';
+        coverEl.src = fixImagePath(book.cover_image);
+        actionsEl.innerHTML = '';
+
+        if (book.is_free) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary';
+            btn.innerText = 'تحميل المخطوطة';
+            btn.onclick = (e) => { e.stopPropagation(); handleDownload(book.id, book.pdf_url); };
+            actionsEl.appendChild(btn);
+        } else {
+            const btn = document.createElement('button');
+            btn.className = 'btn-primary';
+            btn.innerHTML = '<i class="fas fa-cart-shopping"></i> اقتناء';
+            btn.onclick = (e) => { e.stopPropagation(); addToCart(book.id, book.title, book.price, book.cover_image); };
+            actionsEl.appendChild(btn);
+        }
+
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    } catch (e) {
+        showToast('تعذّر تحميل تفاصيل الكتاب', 'error');
+    }
+}
+
+// modal close
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('bookModal');
+    if (!modal) return;
+    if (e.target.matches('.modal-close') || (e.target === modal)) {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+});
