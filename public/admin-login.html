@@ -23,7 +23,7 @@
   <script>
     document.getElementById('loginBtn').addEventListener('click', async () => {
       const pass = document.getElementById('adminPass').value;
-      const res = await fetch('/admin/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: pass }) });
+      const res = await fetch('/admin/login', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: pass }) });
       const data = await res.json();
       if (res.ok) { window.location.href = '/admin.html'; }
       else { document.getElementById('msg').innerText = data.error || 'فشل تسجيل الدخول'; }

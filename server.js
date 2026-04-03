@@ -79,7 +79,7 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'crystal-feather-secret-777',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+    cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 24 * 60 * 60 * 1000 }
 }));
 
 // 🛡️ Clean URI Middleware
