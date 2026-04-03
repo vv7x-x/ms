@@ -26,21 +26,21 @@ async function loadBooks(category = 'all', search = '') {
         }
 
         grid.innerHTML = books.map(book => `
-            <div class="book-card" data-aos="fade-up" onclick="showBookModal('${book.id}')">
+            <div class="book-card" role="button" tabindex="0" aria-label="عرض تفاصيل ${escapeHtml(book.title)}" data-book-id="${book.id}" data-aos="fade-up">
                 <div class="card-img-container">
-                    <img src="${fixImagePath(book.cover_image)}" alt="${book.title}" loading="lazy">
+                    <img src="${fixImagePath(book.cover_image)}" alt="${escapeHtml(book.title)}" loading="lazy">
                 </div>
                 <div class="book-info">
-                    <h3>${book.title}</h3>
+                    <h3>${escapeHtml(book.title)}</h3>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                        <span class="category-tag-mini">${book.category || 'عام'}</span>
-                        <span class="price-tag-mini">${book.is_free ? 'مجاني' : book.price + ' ر.س'}</span>
+                        <span class="category-tag-mini">${escapeHtml(book.category || 'عام')}</span>
+                        <span class="price-tag-mini">${book.is_free ? 'مجاني' : escapeHtml(String(book.price)) + ' ر.س'}</span>
                     </div>
-                    <div style="margin-top:20px;">
+                    <div style="margin-top:16px;">
                         ${book.is_free ? `
-                            <button class="btn-primary" style="width:100%" onclick="event.stopPropagation(); handleDownload('${book.id}', '${book.pdf_url}')">تحميل المخطوطة</button>
+                            <button class="btn-primary" style="width:100%" data-action="download" data-id="${book.id}" onclick="event.stopPropagation(); handleDownload('${book.id}', '${book.pdf_url}')">تحميل المخطوطة</button>
                         ` : `
-                            <button onclick="event.stopPropagation(); addToCart('${book.id}', '${book.title}', ${book.price}, '${book.cover_image}')" class="btn-primary" style="width:100%"><i class="fas fa-cart-shopping"></i> اقتناء</button>
+                            <button data-action="add" data-id="${book.id}" class="btn-primary" style="width:100%" onclick="event.stopPropagation(); addToCart('${book.id}', '${escapeHtml(book.title)}', ${book.price}, '${book.cover_image}')"><i class="fas fa-cart-shopping"></i> اقتناء</button>
                         `}
                     </div>
                 </div>
@@ -117,6 +117,29 @@ window.onload = () => {
     loadBooks(urlParams.get('cat') || 'all');
     updateCartUI();
 };
+
+// small helper to escape HTML in templates
+function escapeHtml(unsafe) {
+    return String(unsafe).replace(/[&<>"]+/g, function(match) {
+        switch(match) {
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+        }
+    });
+}
+
+// keyboard support: open modal on Enter/Space when focused on a .book-card
+document.addEventListener('keydown', (e) => {
+    const el = document.activeElement;
+    if (!el) return;
+    if (el.classList && el.classList.contains('book-card') && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const id = el.getAttribute('data-book-id');
+        if (id) showBookModal(id);
+    }
+});
 
 // Book modal logic
 async function showBookModal(bookId) {

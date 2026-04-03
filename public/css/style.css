@@ -200,10 +200,10 @@ body {
     margin-bottom: 50px;
 }
 
-.books-grid-modern {
+.books-grid-modern, .books-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 40px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 28px;
 }
 
 /* ── CATEGORY PILLS ── */
@@ -265,7 +265,7 @@ body {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 20px;
+    padding: 14px;
     transition: var(--transition-premium);
     position: relative;
     cursor: pointer;
@@ -309,6 +309,11 @@ body {
     font-size: 1.5rem;
     color: var(--gold-main);
     margin-bottom: 10px;
+}
+
+.book-card:focus {
+    outline: 3px solid rgba(212,175,55,0.25);
+    outline-offset: 4px;
 }
 
 .btn-primary {
@@ -474,4 +479,5 @@ footer {
     .exhibition-container { padding-top: 150px; }
     .title-serif { font-size: 2.2rem; }
     .footer-grid { flex-direction: column; text-align: center; gap: 40px; }
+    .book-card { padding: 12px; }
 }

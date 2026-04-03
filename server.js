@@ -1,11 +1,11 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const session = require('express-session');
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
 const helmet = require('helmet');
 const cors = require('cors');
