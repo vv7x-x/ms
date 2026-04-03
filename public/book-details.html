@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل العمل - ريشة الكريستال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <style>
+        .detail-wrapper {
+            padding: 180px 10% 80px;
+            display: flex;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .book-exhibition-plinth {
+            position: sticky;
+            top: 150px;
+            width: 400px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        .book-exhibition-plinth img {
+            width: 100%;
+            height: auto;
+            border: 5px solid rgba(212, 175, 55, 0.2);
+            filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
+        }
+
+        .ledger-content {
+            flex: 1;
+            background: rgba(10, 8, 7, 0.7);
+            border: 1px solid var(--glass-border);
+            padding: 50px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .ledger-header h1 {
+            font-family: var(--font-serif);
+            font-size: 3.5rem;
+            color: var(--gold-main);
+            margin-bottom: 20px;
+        }
+
+        .ledger-desc {
+            font-size: 1.2rem;
+            line-height: 2;
+            color: var(--text-parchment);
+            margin: 40px 0;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .action-ledger {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .price-tag-gold {
+            font-size: 2.5rem;
+            color: var(--gold-light);
+            font-family: var(--font-serif);
+        }
+
+        .review-card-ledger {
+            background: rgba(255,255,255,0.02);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            border-right: 3px solid var(--gold-main);
+        }
+    </style>
+</head>
+<body>
+    <div class="site-wrapper">
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src="assets/logo.png" alt="Logo" class="site-logo">
+                <div class="logo-text">
+                    <h1>ريشة الكريستال</h1>
+                    <p>معرض ومؤلفات</p>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="categories.html?cat=novels">روايات</a></li>
+                    <li><a href="categories.html?cat=literature">أدب</a></li>
+                </ul>
+                <ul class="nav-links">
+                    <li><a href="author-dashboard.html">نشر مؤلف</a></li>
+                    <li><a href="profile.html">حسابي</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="detail-wrapper">
+            <div class="book-exhibition-plinth" data-aos="fade-left">
+                <img id="bookImage" src="assets/books.png">
+                <div class="plinth-base" style="margin-top: 20px; color: var(--gold-main); font-family: var(--font-serif); letter-spacing: 2px;">مجلد أصلي معتمد</div>
+            </div>
+
+            <div class="ledger-content" data-aos="fade-right">
+                <div class="ledger-header">
+                    <span id="catTag" class="category-tag">جاري التحميل...</span>
+                    <h1 id="bookTitle">عنوان العمل</h1>
+                    <p style="color: var(--text-muted);">بقلم المبدع: <span id="authorName" style="color: var(--gold-rich);">مؤلف مجهول</span></p>
+                </div>
+
+                <div id="bookDesc" class="ledger-desc">
+                    وصف العمل الأدبي يظهر هنا...
+                </div>
+
+                <div class="action-ledger">
+                    <span id="bookPrice" class="price-tag-gold">0 ر.س</span>
+                    <button id="mainBtn" class="btn-primary" style="width:auto; padding: 20px 50px; font-size: 1.2rem;"></button>
+                </div>
+
+                <section class="reviews-section">
+                    <h2 style="font-family: var(--font-serif); color: var(--gold-main); margin-bottom: 30px;">مدونات القراء</h2>
+                    <div id="reviewsList"></div>
+
+                    <div id="reviewBox" style="margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px;">
+                        <textarea id="revComment" class="form-group" style="background: rgba(0,0,0,0.5); color:#fff; padding: 20px;" placeholder="ما رأيك في هذا العمل الأدبي؟"></textarea>
+                        <select id="revRating" style="background: #111; color: var(--gold-main); padding: 10px; margin: 10px 0; display: block;">
+                            <option value="5">امتياز 5/5</option>
+                            <option value="4">جيد جداً 4/5</option>
+                            <option value="3">جيد 3/5</option>
+                            <option value="2">مقبول 2/5</option>
+                            <option value="1">ضعيف 1/5</option>
+                        </select>
+                        <button class="btn-primary" onclick="submitReview()" style="width:auto;">دبّج المراجعة</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section"><h4>ريشة الكريستال</h4><p>معرض أدبي يجمع بين أصالة الماضي وتكنولوجيا العصر.</p></div>
+                <div class="footer-section"><div class="orb-pedestal"><img src="assets/books.png" class="orb-book"></div></div>
+                <div class="footer-section"><h4>روابط</h4><div class="footer-links"><a href="index.html">الرئيسية</a><a href="profile.html">حسابي</a></div></div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        AOS.init();
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookId = urlParams.get('id');
+
+        async function loadData() {
+            try {
+                const res = await fetch(`/api/books/${bookId}`);
+                const data = await res.json();
+                
+                document.getElementById('bookTitle').innerText = data.title;
+                document.getElementById('catTag').innerText = data.category;
+                document.getElementById('bookDesc').innerText = data.desc;
+                document.getElementById('bookPrice').innerText = data.price === 0 ? 'مجاني' : data.price + ' ر.س';
+                if (data.cover_image) document.getElementById('bookImage').src = data.cover_image;
+
+                const btn = document.getElementById('mainBtn');
+                if (data.price === 0) {
+                    btn.innerText = 'تنزيل المجلد (PDF)';
+                    btn.onclick = async () => {
+                        const user = await checkAuth();
+                        if (user.error) return showToast('يرجى تسجيل الدخول لتنزيل المخطوطة', 'error');
+
+                        showToast('جاري استدعاء المخطوطة وتسجيلها في مكتبتك...');
+                        
+                        // Record in library as 'download'
+                        await fetch('/api/library/add', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ bookId: data.id, type: 'download' })
+                        });
+
+                        setTimeout(() => window.open(data.pdf_url, '_blank'), 1500);
+                    };
+                } else {
+                    btn.innerText = 'اقتنِ هذا العمل';
+                    btn.onclick = () => addToCart(data.id, data.title, data.price, data.cover_image);
+                }
+
+                const rl = document.getElementById('reviewsList');
+                rl.innerHTML = data.reviews.length === 0 ? '<p>لم يدبّج أحد مراجعة لهذا العمل بعد.</p>' : 
+                    data.reviews.map(r => `
+                        <div class="review-card-ledger">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong>${r.username}</strong>
+                                <span style="color:var(--gold-main)">${'★'.repeat(r.rating)}</span>
+                            </div>
+                            <p style="margin-top:10px;">${r.comment}</p>
+                        </div>
+                    `).join('');
+            } catch (e) {
+                showToast('خطأ في استرجاع بيانات المجلد', 'error');
+            }
+        }
+
+        function addToCart(id, title, price, image) {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            if (cart.find(i => i.id === id)) return showToast('هذا المجلد موجود بالفعل في السلة', 'error');
+            cart.push({ id, title, price, image });
+            localStorage.setItem('cart', JSON.stringify(cart));
+            showToast('تمت الإضافة لحقيبة المقتنيات بنجاح');
+        }
+
+        async function submitReview() {
+            const comment = document.getElementById('revComment').value;
+            const rating = document.getElementById('revRating').value;
+            if (!comment) return showToast('الرجاء كتابة رأيك أولاً', 'error');
+
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ book_id: bookId, comment, rating: parseInt(rating) })
+            });
+
+            if (res.ok) {
+                showToast('تم حفظ مراجعتك بنجاح');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('يجب تسجيل الدخول لتدبيج مراجعة', 'error');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم العليا - ريشة الكريستال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+</head>
+<body>
+    <div class="site-wrapper">
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src="assets/logo.png" alt="logo" class="site-logo">
+                <div class="logo-text">
+                    <h1>مركز القيادة</h1>
+                    <p>إدارة معرض الكريستال</p>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index.html">المعرض</a></li>
+                    <li><a href="#" onclick="logout()" style="color:var(--gold-main)">خروج الإدارة</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="exhibition-container" data-aos="fade-up" style="padding-top: 150px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 50px;">
+                <div class="book-card" style="text-align: center; cursor: default;"><h3>المجلدات</h3><p id="totalBooks" style="font-size: 2.5rem; color: var(--gold-main); font-weight: bold;">-</p></div>
+                <div class="book-card" style="text-align: center; cursor: default;"><h3>الأعضاء</h3><p id="totalUsers" style="font-size: 2.5rem; color: var(--gold-main); font-weight: bold;">-</p></div>
+                <div class="book-card" style="text-align: center; cursor: default;"><h3>قيد المراجعة</h3><p id="pendingBooks" style="font-size: 2.5rem; color: var(--gold-main); font-weight: bold;">-</p></div>
+            </div>
+
+            <div class="category-pills" style="margin-bottom: 30px;">
+                <button onclick="showTab('booksSec')" id="btn-books" class="pill-active">إدارة الكتب</button>
+                <button onclick="showTab('usersSec')" id="btn-users">إدارة الأعضاء والتوثيق</button>
+            </div>
+
+            <section id="booksSec" class="admin-tab-content">
+                <table class="admin-table">
+                    <thead><tr><th>المجلد</th><th>المؤلف</th><th>الحالة</th><th>إجراء</th></tr></thead>
+                    <tbody id="booksBody"></tbody>
+                </table>
+            </section>
+
+            <section id="usersSec" class="admin-tab-content" style="display:none;">
+                <table class="admin-table">
+                    <thead><tr><th>المستخدم</th><th>الدور</th><th>الحالة</th><th>إجراءات الإدارة</th></tr></thead>
+                    <tbody id="usersBody"></tbody>
+                </table>
+            </section>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section"><h4>مركز الإدارة الموحد</h4><p>تشفير عالي وآمان لضمان سلامة المحتوى الإبداعي.</p></div>
+                <div class="footer-section"><div class="orb-pedestal"><img src="assets/books.png" class="orb-book"></div></div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        AOS.init();
+        
+        async function loadAdminData() {
+            const user = await checkAuth();
+            if (user.error || user.role !== 'admin') {
+                showToast('عذراً، لا تمتلك صلاحية دخول مركز القيادة', 'error');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+
+            try {
+                const [statsRes, booksRes, usersRes] = await Promise.all([
+                    fetch('/api/admin/stats', { headers: getAuthHeaders() }),
+                    fetch('/api/books', { headers: getAuthHeaders() }),
+                    fetch('/api/admin/userlist', { headers: getAuthHeaders() })
+                ]);
+                
+                if (statsRes.status === 401 || statsRes.status === 403) {
+                    showToast('انتهت صلاحية الجلسة الإدارية', 'info');
+                    return window.location.href = 'login.html';
+                }
+
+                const stats = await statsRes.json();
+                const books = await booksRes.json();
+                const users = await usersRes.json();
+
+                document.getElementById('totalBooks').innerText = stats.totalBooks;
+                document.getElementById('pendingBooks').innerText = stats.pendingBooks;
+                document.getElementById('totalUsers').innerText = stats.totalUsers;
+
+                document.getElementById('booksBody').innerHTML = books.map(b => `
+                    <tr>
+                        <td>${b.title}</td>
+                        <td style="color: var(--gold-main);">${b.author_id}</td>
+                        <td><span style="color:${b.status === 'active' ? '#0f0' : '#ffa500'}">${b.status === 'active' ? 'منشور' : 'بانتظار المراجعة'}</span></td>
+                        <td>
+                            ${b.status === 'pending' ? `<button onclick="updateBookStatus(${b.id}, 'active')" class="btn-primary" style="padding: 5px 15px; width: auto;">قبول</button>` : ''}
+                            <button onclick="deleteBook(${b.id})" class="btn-primary" style="padding: 5px 15px; width: auto; background: #800000; margin-right: 10px;">حذف</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                document.getElementById('usersBody').innerHTML = users.map(u => `
+                    <tr>
+                        <td>
+                            ${u.username} ${u.is_verified ? '<i class="fas fa-check-circle" style="color:var(--gold-main); margin-right:5px;" title="موثق"></i>' : ''}
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">${u.status}</div>
+                        </td>
+                        <td>${u.role}</td>
+                        <td>${u.status}</td>
+                        <td style="display:flex; gap:10px;">
+                            ${!u.is_verified ? `<button onclick="verifyUser('${u.id}', true)" class="btn-primary" style="padding: 5px 10px; width:auto; font-size:0.8rem;">توثيق الحساب</button>` : `<button onclick="verifyUser('${u.id}', false)" style="background:none; color:var(--gold-main); border:1px solid var(--gold-main); padding: 5px 10px; border-radius:5px; cursor:pointer; font-size:0.8rem;">إلغاء التوثيق</button>`}
+                            ${u.status !== 'blocked' ? `<button onclick="blockUser('${u.id}')" style="background:#800000; color:#fff; border:none; padding: 5px 10px; border-radius:5px; cursor:pointer; font-size:0.8rem;">حظر</button>` : '<span style="color:#ff4444;">محظور</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                showToast('خطأ في الاتصال بالمركز الرئيس', 'error');
+            }
+        }
+
+        async function verifyUser(id, bool) {
+            const res = await fetch(`/api/admin/users/${id}/verify`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ is_verified: bool })
+            });
+            if (res.ok) {
+                showToast(bool ? 'تم توثيق المبدع بنجاح' : 'تم إلغاء التوثيق');
+                loadAdminData();
+            }
+        }
+
+        async function blockUser(id) {
+            if (confirm('هل تود حظر هذا العضو بشكل نهائي؟')) {
+                const res = await fetch(`/api/admin/users/${id}`, { 
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    showToast('تم حظر الحساب بنجاح');
+                    loadAdminData();
+                }
+            }
+        }
+
+        async function updateBookStatus(id, status) {
+            const res = await fetch(`/api/admin/books/${id}/status`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                showToast('تم تحديث حالة الكتاب');
+                loadAdminData();
+            }
+        }
+
+        function showTab(id) {
+            document.querySelectorAll('.admin-tab-content').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.category-pills button').forEach(b => b.classList.remove('pill-active'));
+            document.getElementById(id).style.display = 'block';
+            document.getElementById('btn-' + id.replace('Sec','')).classList.add('pill-active');
+        }
+
+        loadAdminData();
+    </script>
+</body>
+</html>

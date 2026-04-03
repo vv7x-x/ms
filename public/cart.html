@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سلة المقتنيات - ريشة الكريستال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="site-wrapper">
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src="assets/logo.png" alt="Logo" class="site-logo">
+                <div class="logo-text">
+                    <h1>ريشة الكريستال</h1>
+                    <p>سلة المقتنيات</p>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="categories.html?cat=novels">روايات</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="exhibition-container" style="padding-top: 150px;">
+            <div class="dashboard-container" data-aos="fade-up">
+                <h2 class="title-serif" style="text-align: center; color: var(--gold-main); font-size: 2.5rem; margin-bottom: 40px;">مجلدات قيد الاقتناء</h2>
+                
+                <div id="cartContent" class="admin-grid" style="grid-template-columns: 1fr;">
+                    <div class="book-card" style="padding: 40px; cursor: default;">
+                        <table class="admin-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>المجلد</th>
+                                    <th>السعر</th>
+                                    <th>إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartTableBody">
+                                <!-- Cart items -->
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 30px; text-align: left; border-top: 1px solid var(--glass-border); padding-top: 20px;">
+                            <h3 style="color: var(--gold-light);">المجموع الكلي: <span id="cartTotal" style="color: var(--gold-main);">0</span> ر.س</h3>
+                            <button onclick="window.location.href='checkout.html'" class="btn-primary" style="margin-top: 20px; max-width: 250px;">الانتقال للدفع النهائي</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="emptyCart" style="display: none; text-align: center; padding: 100px;">
+                    <i class="fas fa-shopping-basket" style="font-size: 5rem; color: var(--glass-border); margin-bottom: 20px;"></i>
+                    <h3 style="color: var(--text-muted);">السلة فارغة حالياً.. تصفح المعرض وأضف بعض المخطوطات</h3>
+                    <a href="categories.html?cat=novels" class="btn-primary" style="margin-top: 30px; display: inline-block;">العودة للمعرض</a>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section"><h4>ريشة الكريستال</h4><p>معرض أدبي يجمع بين أصالة الماضي وتكنولوجيا العصر.</p></div>
+                <div class="footer-section"><div class="orb-pedestal"><img src="assets/books.png" class="orb-book"></div></div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        AOS.init();
+        
+        function loadCart() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const tbody = document.getElementById('cartTableBody');
+            const totalEl = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                document.getElementById('cartContent').style.display = 'none';
+                document.getElementById('emptyCart').style.display = 'block';
+                return;
+            }
+
+            let total = 0;
+            tbody.innerHTML = cart.map((item, index) => {
+                total += item.price;
+                return `
+                    <tr>
+                        <td style="display: flex; align-items: center; gap: 15px;">
+                            <img src="${item.image}" style="width: 50px; border-radius: 5px;">
+                            <span>${item.title}</span>
+                        </td>
+                        <td style="color: var(--gold-main);">${item.price} ر.س</td>
+                        <td><button onclick="removeFromCart(${index})" style="background:none; border:none; color:#ff4444; cursor:pointer;"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+            }).join('');
+            
+            totalEl.innerText = total;
+        }
+
+        function removeFromCart(index) {
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            loadCart();
+            showToast('تمت إزالة المجلد من السلة');
+        }
+
+        loadCart();
+    </script>
+</body>
+</html>

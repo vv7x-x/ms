@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المخطوطة الشخصية - ريشة الكريستال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="site-wrapper">
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src="assets/logo.png" alt="Logo" class="site-logo">
+                <div class="logo-text">
+                    <h1>ريشة الكريستال</h1>
+                    <p>رواق المبدعين</p>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="categories.html?cat=novels">روايات</a></li>
+                    <li><a href="#librarySection">مكتبتي</a></li>
+                </ul>
+                <ul class="nav-links">
+                    <li><a href="#" onclick="logout()" style="color:var(--gold-main)">خروج</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="exhibition-container" style="padding-top: 150px;">
+            <div class="dashboard-container" data-aos="fade-up">
+                <!-- User Header -->
+                <div class="profile-header" style="text-align: center; margin-bottom: 50px;">
+                    <div class="avatar-container" style="position: relative; display: inline-block;">
+                        <img id="displayAvatar" src="assets/books.png" alt="Profile" style="width: 150px; height: 150px; border-radius: 50%; border: 3px solid var(--gold-main); object-fit: cover; box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);">
+                        <div id="verifyBadge" style="position: absolute; bottom: 10px; right: 10px; background: #111; border-radius: 50%; width: 40px; height: 40px; display: none; align-items: center; justify-content: center; border: 1px solid var(--gold-main);">
+                            <i class="fas fa-check-circle" style="color: var(--gold-main); font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <h2 id="displayUsername" style="margin-top: 15px; color: var(--gold-main); font-family: var(--font-serif); font-size: 2.5rem;">جاري التحميل...</h2>
+                    <p id="displayRoleBadge" style="color: var(--text-muted); letter-spacing: 2px;">بوابة المبدعين</p>
+                </div>
+
+                <!-- Analytics Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 50px;">
+                    <div class="book-card" style="text-align: center; padding: 20px; cursor: default;">
+                        <h4 style="color: var(--gold-light);">المؤلفات</h4>
+                        <p id="statWorks" style="font-size: 2rem; color: var(--gold-main);">0</p>
+                    </div>
+                    <div class="book-card" style="text-align: center; padding: 20px; cursor: default;">
+                        <h4 style="color: var(--gold-light);">مكتبتي</h4>
+                        <p id="statLibrary" style="font-size: 2rem; color: var(--gold-main);">0</p>
+                    </div>
+                    <div class="book-card" style="text-align: center; padding: 20px; cursor: default;">
+                        <h4 style="color: var(--gold-light);">التوثيق</h4>
+                        <p id="statVerified" style="font-size: 0.9rem; color: var(--gold-main);">عضو عادي</p>
+                    </div>
+                </div>
+
+                <div class="admin-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 40px;">
+                    <!-- Settings -->
+                    <section class="book-card" style="padding: 40px; cursor: default;">
+                        <h3 class="title-serif" style="color: var(--gold-main); margin-bottom: 25px;">تخصيص الهوية</h3>
+                        <form id="profileForm">
+                            <div style="margin-bottom: 20px;">
+                                <label style="display:block; margin-bottom:10px; color:var(--gold-light);">الاسم الظاهر</label>
+                                <input type="text" id="profileUsername" style="width:100%; padding:12px; background:rgba(0,0,0,0.4); border:1px solid var(--glass-border); color:#fff; border-radius:8px;" required>
+                            </div>
+                            <div style="margin-bottom: 20px;">
+                                <label style="display:block; margin-bottom:10px; color:var(--gold-light);">نبذة (Bio)</label>
+                                <textarea id="profileBio" rows="4" style="width:100%; padding:12px; background:rgba(0,0,0,0.4); border:1px solid var(--glass-border); color:#fff; border-radius:8px;"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary" style="padding: 12px;">حفظ المخطوطة</button>
+                        </form>
+                    </section>
+
+                    <!-- Library Section -->
+                    <section id="librarySection">
+                        <h3 class="title-serif" style="color: var(--gold-main); margin-bottom: 25px;">مكتبتي الخاصة (المقتنيات)</h3>
+                        <div class="books-grid" id="libGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));">
+                            <!-- Items appear here -->
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section"><h4>ريشة الكريستال</h4><p>معرض أدبي يجمع بين أصالة الماضي وتكنولوجيا العصر.</p></div>
+                <div class="footer-section"><div class="orb-pedestal"><img src="assets/books.png" class="orb-book"></div></div>
+            </div>
+            <div class="footer-bottom"><p>جميع الحقوق محفوظة © 2024</p></div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        AOS.init();
+        
+        async function loadProfile() {
+            showToast('جاري استدعاء هويتك من الأرشيف...');
+            const user = await checkAuth();
+            
+            if (user.error) {
+                showToast('عذراً، جلسة التوثيق منتهية. يرجى تسجيل الدخول مجدداً.', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/profiles/${user.id}`, { headers: getAuthHeaders() });
+                if (!res.ok) throw new Error('Failed to fetch profile');
+                const data = await res.json();
+
+                document.getElementById('displayUsername').innerText = data.username;
+                document.getElementById('displayRoleBadge').innerText = data.role === 'author' ? 'مبدع أدبي' : 'قارئ نهم';
+                
+                document.getElementById('statWorks').innerText = data.analytics.totalWorks;
+                document.getElementById('statLibrary').innerText = data.analytics.librarySize;
+                document.getElementById('statVerified').innerText = data.analytics.isVerified ? 'مبدع موثق' : 'عضو في المكتبة';
+
+                if (data.analytics.isVerified) {
+                    document.getElementById('verifyBadge').style.display = 'flex';
+                    document.getElementById('displayUsername').style.color = 'var(--gold-main)';
+                }
+
+                document.getElementById('profileUsername').value = data.username;
+                document.getElementById('profileBio').value = data.bio || '';
+
+                // Render Library
+                const libGrid = document.getElementById('libGrid');
+                if (data.library.length === 0) {
+                    libGrid.innerHTML = '<p style="color:var(--text-muted); padding:20px;">لا توجد مقتنيات حالياً..</p>';
+                } else {
+                    libGrid.innerHTML = data.library.map(item => `
+                        <div class="book-card" onclick="window.location.href='book-details.html?id=${item.book_id}'">
+                            <div class="card-img-container" style="height: 250px;">
+                                <img src="${item.books.cover_image || 'assets/books.png'}" onerror="this.src='assets/books.png'">
+                            </div>
+                            <h4 style="margin-top:10px;">${item.books.title}</h4>
+                            <p style="color:var(--gold-main); font-size:0.8rem;">${item.acquisition_type === 'purchase' ? 'مقتنى' : 'تم التحميل'}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Profile Error:', err);
+                showToast('خطأ في جلب بيانات المخطوطة الشخصية', 'error');
+            }
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                username: document.getElementById('profileUsername').value,
+                bio: document.getElementById('profileBio').value
+            };
+            const res = await fetch('/api/profiles', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                showToast('تم تحديث البيانات بنجاح');
+                setTimeout(() => location.reload(), 1000);
+            }
+        });
+
+        loadProfile();
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - ريشة الكريستال</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+</head>
+<body>
+    <div class="site-wrapper">
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index.html'">
+                <img src="assets/logo.png" alt="Logo" class="site-logo">
+                <div class="logo-text">
+                    <h1>ريشة الكريستال</h1>
+                    <p>بوابة الدخول</p>
+                </div>
+            </div>
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index.html">الرئيسية</a></li>
+                    <li><a href="register.html" style="color:var(--gold-main)">إنشاء حساب</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <main class="exhibition-container" data-aos="zoom-in" style="display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 20px;">
+            <div class="book-card" style="max-width: 450px; width: 100%; padding: 50px; cursor: default;">
+                <h2 class="title-serif" style="font-size: 2.2rem; text-align: center; margin-bottom: 40px; color: var(--gold-main);">تسجيل الدخول</h2>
+                
+                <form id="loginForm">
+                    <div style="margin-bottom: 25px;">
+                        <label style="display:block; margin-bottom:10px; color:var(--gold-light);">اسم المستخدم</label>
+                        <input type="text" id="username" style="width:100%; padding:15px; background:rgba(0,0,0,0.4); border:1px solid var(--glass-border); color:#fff; border-radius:10px;" required placeholder="أدخل اسم المستخدم">
+                    </div>
+                    <div style="margin-bottom: 30px;">
+                        <label style="display:block; margin-bottom:10px; color:var(--gold-light);">كلمة المرور</label>
+                        <input type="password" id="password" style="width:100%; padding:15px; background:rgba(0,0,0,0.4); border:1px solid var(--glass-border); color:#fff; border-radius:10px;" required placeholder="أدخل كلمة المرور">
+                    </div>
+                    <button type="submit" class="btn-primary" style="font-size: 1.1rem; padding: 15px;">دخول للمكتبة</button>
+                </form>
+
+                <p style="text-align: center; margin-top: 30px; color: var(--text-muted);">
+                    ليس لديك حساب؟ <a href="register.html" style="color: var(--gold-main); font-weight: bold;">سجل الآن</a>
+                </p>
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section"><h4>ريشة الكريستال</h4><p>بوابة المبدعين والقراء في عالم الأدب العربي.</p></div>
+                <div class="footer-section"><div class="orb-pedestal"><img src="assets/books.png" class="orb-book"></div></div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script>
+        AOS.init();
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    // STORE TOKEN & USER FOR PERSISTENCE
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    showToast('تم تسجيل الدخول بنجاح');
+                    setTimeout(() => {
+                        if (data.user.role === 'admin') window.location.href = 'admin.html';
+                        else if (data.user.role === 'author') window.location.href = 'author-dashboard.html';
+                        else window.location.href = 'index.html';
+                    }, 1000);
+                } else {
+                    showToast(data.error || 'فشل تسجيل الدخول', 'error');
+                }
+            } catch (err) {
+                showToast('فشل الاتصال بالخادم', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ريشة الكريستال - معرض المخطوطات والكتب</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="css/style.css?v=1.1">
+</head>
+<body>
+    <div class="site-wrapper">
+        <!-- Modern Header -->
+        <header class="main-header">
+            <div class="logo-container" onclick="window.location.href='index'">
+                <img src="assets/logo.png" alt="ريشة الكريستال" class="site-logo">
+                <div class="logo-text">
+                    <h1>ريشة الكريستال</h1>
+                    <p>معرض ومؤلفات</p>
+                </div>
+            </div>
+
+            <nav class="nav-section">
+                <ul class="nav-links">
+                    <li><a href="index" class="active">الرئيسية</a></li>
+                    <li><a href="categories?cat=literature">الأدب</a></li>
+                    <li><a href="categories?cat=novels">روايات</a></li>
+                    <li><a href="categories?cat=short-stories">قصص</a></li>
+                    <li><a href="cart"><i class="fas fa-shopping-basket"></i> <span id="cart-count">0</span></a></li>
+                </ul>
+                <ul class="nav-links">
+                    <li><a href="author-dashboard">نشر مؤلف</a></li>
+                    <li id="authLink"><a href="login">حسابي</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <!-- Hero Search Section -->
+        <section class="hero-exhibition" data-aos="fade-up">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h2 class="title-serif">عالم من المقتنيات الأدبية</h2>
+                <div class="search-box-modern">
+                    <input type="text" id="searchInput" placeholder="ابحث عن عنوان كتاب أو اسم مؤلف...">
+                    <button id="searchBtn"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- The Main Exhibition Grid -->
+        <main class="exhibition-container">
+            <div class="exhibition-header" data-aos="fade-up">
+                <div class="category-pills">
+                    <button onclick="loadBooks('all')" class="pill-active">الكل</button>
+                    <button onclick="loadBooks('literature')">أعمال أدبية</button>
+                    <button onclick="loadBooks('novels')">روايات</button>
+                    <button onclick="loadBooks('short-stories')">قصص قصيرة</button>
+                </div>
+                <div class="section-title-wrap">
+                    <h2 class="section-heading">إصدارات المعرض</h2>
+                    <div class="title-line"></div>
+                </div>
+            </div>
+
+            <div class="books-grid" id="newBooks">
+                <!-- Data from API -->
+            </div>
+        </main>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h4>ريشة الكريستال</h4>
+                    <p>معرض أدبي يجمع بين أصالة الماضي وتكنولوجيا العصر، حيث تجد أرقى المجلدات والمؤلفات الحصرية للمبدعين.</p>
+                </div>
+                <div class="footer-section">
+                    <div class="orb-pedestal">
+                        <img src="assets/books.png" alt="Crystal Orb" class="orb-book">
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h4>روابط سريعة</h4>
+                    <div class="footer-links">
+                        <a href="index">الرئيسية</a>
+                        <a href="categories?cat=novels">الروايات</a>
+                        <a href="profile">حسابي الشخصي</a>
+                        <a href="#" onclick="logout()">خروج</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>جميع الحقوق محفوظة © 2024 - منصة ريشة الكريستال الأدبية</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Dynamic Auth Link in Header
+        async function updateHeader() {
+            const user = await checkAuth();
+            if (user && !user.error) {
+                document.getElementById('authLink').innerHTML = `<a href="profile">${user.username} <i class="fas fa-crown" style="color:var(--gold-main)"></i></a>`;
+            }
+        }
+        updateHeader();
+    </script>
+</body>
+</html>

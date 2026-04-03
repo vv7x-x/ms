@@ -1,0 +1,260 @@
+require('dotenv').config();
+const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const session = require('express-session');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const helmet = require('helmet');
+const cors = require('cors');
+const morgan = require('morgan');
+
+const app = express();
+
+// REAL-WORLD PHYSICAL DIRECTORY SYNC
+const uploadDirs = ['uploads/books', 'uploads/covers'];
+uploadDirs.forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+});
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// MIDDLEWARE
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'crystal-feather-secret-777',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
+}));
+
+// 🛡️ Clean URI Middleware
+app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 🧼 NO-CACHE PROTOCOL (Dev-Only Safety)
+app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    next();
+});
+
+// STORAGE STORAGE CONFIG
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dest = file.fieldname === 'pdfFile' ? 'uploads/books/' : 'uploads/covers/';
+        cb(null, dest);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname);
+    }
+});
+const upload = multer({ storage });
+
+// 🔐 JWT AUTH MIDDLEWARE
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    const sessionToken = req.session && req.session.user ? req.session.user.token : null;
+    const finalToken = token || sessionToken;
+
+    if (!finalToken) {
+        console.warn(`[AUTH] Refused access to ${req.path} - No token provided.`);
+        return res.status(401).json({ error: 'الرجاء تسجيل الدخول' });
+    }
+
+    jwt.verify(finalToken, JWT_SECRET, (err, user) => {
+        if (err) {
+            console.error(`[AUTH] JWT Verify Failed for ${req.path}:`, err.message);
+            return res.status(403).json({ error: 'جلسة التوثيق منتهية أو غير صالحة' });
+        }
+        req.user = user;
+        next();
+    });
+}
+
+// 👤 AUTH ROUTES
+app.post('/api/auth/register', async (req, res) => {
+    const { username, password, role } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'بيانات ناقصة' });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const { data: profile, error } = await supabase.from('profiles').insert([
+        { username, password_hash: hashedPassword, role: role || 'reader', status: 'active', is_verified: false }
+    ]).select();
+
+    if (error) return res.status(500).json({ error: 'عذراً، هذا الاسم مستخدم بالفعل' });
+    res.json({ success: true, user: profile[0] });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    const { data: user, error } = await supabase.from('profiles').select('*').eq('username', username).single();
+
+    if (error || !user) return res.status(401).json({ error: 'خطأ في اسم المستخدم أو كلمة المرور' });
+    if (user.status === 'blocked') return res.status(403).json({ error: 'عذراً، هذا الحساب محظور حالياً' });
+
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    if (!validPassword) return res.status(401).json({ error: 'خطأ في كلمة المرور' });
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, process.env.JWT_SECRET || 'jwt-secret-999', { expiresIn: '24h' });
+    req.session.user = { id: user.id, username: user.username, role: user.role, token };
+    
+    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role } });
+});
+
+app.get('/api/auth/logout', (req, res) => {
+    req.session.destroy();
+    res.json({ success: true });
+});
+
+app.get('/api/auth/me', authenticateToken, (req, res) => {
+    res.json(req.user);
+});
+
+// 🎨 PROFILES
+app.get('/api/profiles/:userId', async (req, res) => {
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', req.params.userId).single();
+    if (!profile) return res.status(404).json({ error: 'الصفحة غير موجودة' });
+
+    const { data: books } = await supabase.from('books').select('*').eq('author_id', req.params.userId);
+    const { data: library } = await supabase.from('user_library').select('*, books(*)').eq('user_id', req.params.userId);
+
+    res.json({ 
+        ...profile, 
+        books: books || [], 
+        library: library || [],
+        analytics: {
+            totalWorks: books ? books.length : 0,
+            librarySize: library ? library.length : 0,
+            isVerified: profile.is_verified
+        }
+    });
+});
+
+app.put('/api/profiles', authenticateToken, async (req, res) => {
+    const { username, bio, profileImage } = req.body;
+    const { data, error } = await supabase.from('profiles')
+        .update({ username, bio, profile_image: profileImage })
+        .eq('id', req.user.id)
+        .select();
+
+    if (error) return res.status(500).json({ error: 'فشل التحديث' });
+    res.json({ success: true, profile: data[0] });
+});
+
+// 📚 BOOKS
+app.get('/api/books', async (req, res) => {
+    let { category, search } = req.query;
+    let query = supabase.from('books').select('*').eq('status', 'active');
+    
+    if (category && category !== 'all') query = query.eq('category', category);
+    if (search) query = query.ilike('title', `%${search}%`);
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data || []);
+});
+
+app.get('/api/books/:id', async (req, res) => {
+    const { data: book } = await supabase.from('books').select('*').eq('id', req.params.id).single();
+    if (!book) return res.status(404).json({ error: 'الكتاب غير موجود' });
+    
+    const { data: reviews } = await supabase.from('reviews').select('*').eq('book_id', req.params.id);
+    res.json({ ...book, reviews: reviews || [] });
+});
+
+const uploadMiddleware = upload.fields([
+    { name: 'pdfFile', maxCount: 1 }, 
+    { name: 'coverImage', maxCount: 1 }
+]);
+
+app.post('/api/books', authenticateToken, (req, res, next) => {
+    uploadMiddleware(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            console.error('[MULTER ERROR] Field Mismatch:', err.stack);
+            return res.status(400).json({ error: `خطأ في تحميل الحقول: ${err.message}` });
+        } else if (err) {
+            return res.status(500).json({ error: 'خطأ غير متوقع أثناء الرفع' });
+        }
+        next();
+    });
+}, async (req, res) => {
+    if (req.user.role !== 'author' && req.user.role !== 'admin') return res.status(403).json({ error: 'يجب أن تكون مؤلفاً للنشر' });
+
+    const { title, desc, price, category, isFree } = req.body;
+    const pdfPath = req.files['pdfFile'] ? `/uploads/books/${req.files['pdfFile'][0].filename}` : null;
+    const coverPath = req.files['coverImage'] ? `/uploads/covers/${req.files['coverImage'][0].filename}` : '/assets/books.png';
+
+    if (!pdfPath) return res.status(400).json({ error: 'يجب رفع المخطوطة بملف PDF' });
+
+    const { data, error } = await supabase.from('books').insert([{ 
+        title, description: desc, price: parseInt(price) || 0, category, is_free: isFree === 'true', 
+        pdf_url: pdfPath, cover_image: coverPath, author_id: req.user.id, status: 'active' 
+    }]).select();
+
+    if (error) return res.status(500).json({ error: 'فشل حفظ المخطوطة في الأرشيف' });
+    res.json({ success: true, book: data[0] });
+});
+
+// 📖 USER LIBRARY & DOWNLOADS
+app.post('/api/library/add', authenticateToken, async (req, res) => {
+    const { bookId, type } = req.body;
+    const { error: libError } = await supabase.from('user_library').upsert([{ 
+        user_id: req.user.id, book_id: bookId, acquisition_type: type 
+    }]);
+
+    const column = type === 'purchase' ? 'purchases_count' : 'downloads_count';
+    const { data: book } = await supabase.from('books').select(column).eq('id', bookId).single();
+    if (book) {
+        await supabase.from('books').update({ [column]: (book[column] || 0) + 1 }).eq('id', bookId);
+    }
+
+    if (libError) return res.status(500).json({ error: 'فشل الإضافة للمكتبة' });
+    res.json({ success: true });
+});
+
+// 👑 ADMIN API
+app.get('/api/admin/stats', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Access Denied' });
+
+    const { count: totalBooks } = await supabase.from('books').select('*', { count: 'exact', head: true });
+    const { count: pendingBooks } = await supabase.from('books').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    const { count: totalUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+    
+    res.json({ totalBooks: totalBooks || 0, pendingBooks: pendingBooks || 0, totalUsers: totalUsers || 0, revenue: 0 });
+});
+
+app.get('/api/admin/userlist', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Denied' });
+    const { data: users } = await supabase.from('profiles').select('*');
+    res.json(users || []);
+});
+
+app.put('/api/admin/users/:userId/verify', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Denied' });
+    const { is_verified } = req.body;
+    await supabase.from('profiles').update({ is_verified, verified_at: is_verified ? new Date().toISOString() : null }).eq('id', req.params.userId);
+    res.json({ success: true });
+});
+
+app.delete('/api/admin/users/:userId', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Denied' });
+    await supabase.from('profiles').update({ status: 'blocked' }).eq('id', req.params.userId);
+    res.json({ success: true });
+});
+
+app.put('/api/admin/books/:id/status', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Denied' });
+    const { status } = req.body;
+    await supabase.from('books').update({ status }).eq('id', req.params.id);
+    res.json({ success: true });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Crystal Feather Live at http://localhost:${PORT}`));
