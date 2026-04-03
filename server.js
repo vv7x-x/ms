@@ -400,5 +400,10 @@ app.put('/api/admin/books/:id/status', authenticateToken, async (req, res) => {
     res.json({ success: true });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Crystal Feather Live at http://localhost:${PORT}`));
+// Export app when running in serverless environments (Vercel).
+if (process.env.VERCEL) {
+    module.exports = app;
+} else {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => console.log(`🚀 Crystal Feather Live at http://localhost:${PORT}`));
+}
