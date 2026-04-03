@@ -77,6 +77,8 @@ function addToCart(id, title, price, image) {
     showToast(`تمت إضافة "${title}" لسلة المقتنيات بنجاح`);
 }
 
+let modalPrevFocus = null;
+
 function updateCartUI() {
     const cartCountEl = document.getElementById('cart-count');
     if (cartCountEl) {
@@ -148,6 +150,9 @@ async function showBookModal(bookId) {
     const descEl = modal.querySelector('.modal-desc');
     const coverEl = modal.querySelector('.modal-cover img');
     const actionsEl = modal.querySelector('.modal-actions');
+    const closeBtn = modal.querySelector('.modal-close');
+    const prevFocus = document.activeElement;
+    modalPrevFocus = prevFocus;
 
     // fetch book details
     try {
@@ -174,6 +179,8 @@ async function showBookModal(bookId) {
 
         modal.classList.add('show');
         modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        if (closeBtn) closeBtn.focus();
     } catch (e) {
         showToast('تعذّر تحميل تفاصيل الكتاب', 'error');
     }
@@ -186,5 +193,8 @@ document.addEventListener('click', (e) => {
     if (e.target.matches('.modal-close') || (e.target === modal)) {
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (modalPrevFocus) modalPrevFocus.focus();
+        modalPrevFocus = null;
     }
 });
