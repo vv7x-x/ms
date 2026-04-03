@@ -1,0 +1,39 @@
+Instructions to add environment variables to Vercel (production)
+
+Recommended: use Vercel dashboard (Settings → Environment Variables) and add the following variables for the Production environment.
+
+KEY=VALUE
+
+SUPABASE_URL=https://rceyebgawmhrqpofxysp.supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJjZXllYmdhd21ocnFwb2Z4eXNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjUyMjgsImV4cCI6MjA5MDc0MTIyOH0.yazDYqBj_eImcRiwn-2N2LFFFK-qNJ0SOQeeO8-88eQ
+PORT=3000
+SESSION_SECRET=crystal_feather_secret_key_999
+JWT_SECRET=super_secret_crystal_feather_key_555_secure
+ADMIN_PASSWORD=yahya2009001
+CORS_ALLOWED=http://localhost:3000
+NODE_ENV=production
+
+CLI alternative (interactive):
+1) Install & login with the Vercel CLI:
+   npm i -g vercel
+   vercel login
+
+2) Run for each variable to add it interactively:
+   vercel env add SUPABASE_URL production
+   vercel env add SUPABASE_KEY production
+   vercel env add PORT production
+   vercel env add SESSION_SECRET production
+   vercel env add JWT_SECRET production
+   vercel env add ADMIN_PASSWORD production
+   vercel env add CORS_ALLOWED production
+   vercel env add NODE_ENV production
+
+REST API alternative (non-interactive — requires Vercel token and projectId):
+curl -X POST "https://api.vercel.com/v9/projects/<PROJECT_ID>/env" \
+  -H "Authorization: Bearer $VERCEL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"SUPABASE_URL","value":"https://rceyebgawmhrqpofxysp.supabase.co","target":["production"]}'
+
+Repeat the REST call for each variable.
+
+After adding variables, redeploy (or run `vercel --prod`).
