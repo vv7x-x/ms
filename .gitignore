@@ -1,0 +1,6 @@
+node_modules/
+uploads/
+.env
+*.png
+*.log
+frontend_verify.js
