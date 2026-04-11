@@ -23,3 +23,10 @@ Notes
 
 Goals of Milestone A
 - Fix JWT secret usage, enable basic rate-limiting, restrict CORS, and validate uploaded files.
+
+## Project Refinement (Jules)
+- Modularized backend architecture (api/routes, api/middlewares, api/config).
+- Implemented security headers (Helmet), CORS, and Rate Limiting.
+- Enhanced file upload validation for PDFs and images.
+- Added .env.example for environment configuration.
+- Improved error handling with centralized middleware.
