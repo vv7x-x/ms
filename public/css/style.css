@@ -3,11 +3,12 @@
     --bg-black: #080605;
     --navy-dark: #0f0b0a;
     --gold-main: #d4af37;
+    --gold-gradient: linear-gradient(135deg, #d4af37 0%, #f7e7ce 50%, #b8860b 100%);
     --gold-dim: #b8860b;
     --gold-light: #f7e7ce;
     --text-parchment: #fdfaf5;
     --text-muted: #8d8781;
-    --glass-bg: rgba(20, 15, 12, 0.9);
+    --glass-bg: rgba(15, 12, 10, 0.95);
     --glass-border: rgba(212, 175, 55, 0.2);
     --font-serif: 'Amiri', serif;
     --font-sans: 'Cairo', sans-serif;
@@ -18,6 +19,7 @@
 
 body {
     background-color: var(--bg-black);
+    background: radial-gradient(circle at top right, #1a1512 0%, #080605 100%);
     color: var(--text-parchment);
     font-family: var(--font-sans);
     direction: rtl;
@@ -112,7 +114,7 @@ body {
     right: 0;
     width: 0;
     height: 1px;
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     transition: var(--transition-premium);
 }
 
@@ -170,7 +172,7 @@ body {
 }
 
 #searchBtn {
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     width: 50px;
     height: 50px;
     border-radius: 50%;
@@ -196,7 +198,7 @@ body {
 .title-line {
     width: 100px;
     height: 2px;
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     margin-bottom: 50px;
 }
 
@@ -233,7 +235,7 @@ body {
 }
 
 .category-pills button:hover, .category-pills button.pill-active {
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     color: #000;
     border-color: var(--gold-main);
 }
@@ -264,8 +266,8 @@ body {
 .book-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 14px;
+    border-radius: 24px;
+    padding: 20px;
     transition: var(--transition-premium);
     position: relative;
     cursor: pointer;
@@ -317,7 +319,7 @@ body {
 }
 
 .btn-primary {
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     color: #000;
     border: none;
     padding: 12px 25px;
@@ -411,7 +413,7 @@ footer {
     left: 40px;
     width: 70px;
     height: 70px;
-    background: var(--gold-main);
+    background: var(--gold-gradient);
     color: #000;
     border-radius: 50%;
     display: flex;
@@ -480,4 +482,55 @@ footer {
     .title-serif { font-size: 2.2rem; }
     .footer-grid { flex-direction: column; text-align: center; gap: 40px; }
     .book-card { padding: 12px; }
+}
+
+/* ── ADDITIONAL REFINEMENTS ── */
+.book-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.4), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.section-heading::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: var(--gold-gradient);
+    margin-top: 15px;
+}
+
+.btn-primary {
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5);
+    transform: translateY(-2px);
+}
+
+.search-box-modern:focus-within {
+    border-color: var(--gold-main);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+}
+.hero-exhibition::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
 }
